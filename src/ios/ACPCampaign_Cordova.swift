@@ -30,27 +30,41 @@ import UserNotifications
           return
       }
       
-      let center = UNUserNotificationCenter.current()
-      center.delegate = self
-      center.requestAuthorization(options: [.sound, .alert, .badge]) { granted, error in
-          self.typeId = Bundle.main.object(forInfoDictionaryKey: "TypeId") as? String ?? ""
+      self.typeId = Bundle.main.object(forInfoDictionaryKey: "TypeId") as? String ?? ""
+      
+      // Request notification permissions on main thread
+      DispatchQueue.main.async {
+          let center = UNUserNotificationCenter.current()
+          center.delegate = self
           
-          if error == nil {
-              MobileCore.collectPii([self.typeId: valueTypeId])
+          // Request authorization with all relevant options
+          center.requestAuthorization(options: [.sound, .alert, .badge]) { granted, error in
               
-              DispatchQueue.main.async {
-                  UIApplication.shared.registerForRemoteNotifications()
+              if let error = error {
+                  NSLog("Push notification authorization error: %@", error.localizedDescription)
+                  let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: error.localizedDescription)
+                  self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+                  return
               }
               
-              NSLog("Push registration success.")
-          } else {
-              NSLog("Push registration FAILED: %@", error?.localizedDescription ?? "")
+              if granted {
+                  NSLog("Push notification authorization granted")
+                  
+                  // Collect PII data
+                  MobileCore.collectPii([self.typeId: valueTypeId])
+                  
+                  // Register for remote notifications on main thread
+                  DispatchQueue.main.async {
+                      UIApplication.shared.registerForRemoteNotifications()
+                  }
+              } else {
+                  NSLog("Push notification authorization denied by user")
+              }
+              
+              let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: granted ? "granted" : "denied")
+              self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
           }
-          
-          let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
-          self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
       }
-      MobileCore.setLogLevel(.debug)
   }
 
   @objc(getTypeId:)
@@ -60,5 +74,38 @@ import UserNotifications
         status: CDVCommandStatus_OK, messageAs: self.typeId)
       self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     })
+  }
+  
+  // MARK: - UNUserNotificationCenterDelegate
+  
+  // Handle notifications when app is in foreground
+  func userNotificationCenter(_ center: UNUserNotificationCenter, 
+                             willPresent notification: UNNotification, 
+                             withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+      // Show notification even when app is in foreground
+      if #available(iOS 14.0, *) {
+          completionHandler([.banner, .sound, .badge])
+      } else {
+          completionHandler([.alert, .sound, .badge])
+      }
+  }
+  
+  // Handle notification tap
+  func userNotificationCenter(_ center: UNUserNotificationCenter, 
+                             didReceive response: UNNotificationResponse, 
+                             withCompletionHandler completionHandler: @escaping () -> Void) {
+      let userInfo = response.notification.request.content.userInfo
+      
+      // Track notification interaction
+      if let deliveryId = userInfo["_dId"] as? String,
+         let broadlogId = userInfo["_mId"] as? String {
+          MobileCore.collectMessageInfo([
+              "deliveryId": deliveryId,
+              "broadlogId": broadlogId,
+              "action": "1" // Click action
+          ])
+      }
+      
+      completionHandler()
   }
 }

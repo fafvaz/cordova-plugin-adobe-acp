@@ -13,11 +13,16 @@ var ACPCampaign = (function () {
   var exec = require('cordova/exec');
   var ACPCampaign = (typeof exports !== 'undefined' && exports) || {};
   var PLUGIN_NAME = 'ACPCampaign_Cordova';
+  
   // ===========================================================================
   // public APIs
   // ===========================================================================
 
-  // Gets the current Analytics extension version.
+  /**
+   * Gets the current Campaign extension version
+   * @param {Function} success - Success callback with version string
+   * @param {Function} error - Error callback
+   */
   ACPCampaign.extensionVersion = function (success, error) {
     var FUNCTION_NAME = 'extensionVersion';
 
@@ -34,32 +39,56 @@ var ACPCampaign = (function () {
     exec(success, error, PLUGIN_NAME, FUNCTION_NAME, []);
   };
  
-  //Call setPushIdentifer to send the push identifier that is received from the APNS or FCM to the Adobe Identity service
-  ACPCampaign.setPushIdentifier = function (DeviceToken, FiscalNumber, success, error) {
+  /**
+   * Sets push identifier for Adobe Campaign
+   * Call this after user grants push notification permission
+   * 
+   * @param {String} deviceToken - Device push token from APNS/FCM
+   * @param {String} fiscalNumber - User's fiscal number or custom identifier
+   * @param {Function} success - Success callback
+   * @param {Function} error - Error callback
+   * 
+   * @example
+   * // After getting push permission:
+   * ACPCampaign.setPushIdentifier(
+   *   deviceToken, 
+   *   userFiscalNumber,
+   *   function() {
+   *     console.log('Push identifier set successfully');
+   *   },
+   *   function(error) {
+   *     console.error('Error setting push identifier:', error);
+   *   }
+   * );
+   */
+  ACPCampaign.setPushIdentifier = function (deviceToken, fiscalNumber, success, error) {
     var FUNCTION_NAME = 'setPushIdentifier';
+    
+    if (!isString(deviceToken)) {
+      printNotAString('deviceToken', FUNCTION_NAME);
+      return;
+    }
+    
+    if (!isString(fiscalNumber)) {
+      printNotAString('fiscalNumber', FUNCTION_NAME);
+      return;
+    }
+
     if (success && !isFunction(success)) {
       printNotAFunction('success', FUNCTION_NAME);
       return;
     }
+    
     if (error && !isFunction(error)) {
       printNotAFunction('error', FUNCTION_NAME);
       return;
     }
 
-  exec(success, error, PLUGIN_NAME, FUNCTION_NAME, [DeviceToken, FiscalNumber]);
-  
-  };
-
-  ACPCampaign.loadAdobe = function (deviceToken, fiscalNumber, success, error) {
-
-    var FUNCTION_NAME = 'loadAdobe';
     exec(success, error, PLUGIN_NAME, FUNCTION_NAME, [deviceToken, fiscalNumber]);
-};
+  };
 
   return ACPCampaign;
 })();
-
-
 
 // ===========================================================================
 // helper functions

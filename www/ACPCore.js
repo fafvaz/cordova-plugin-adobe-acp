@@ -31,10 +31,13 @@ var ACPCore = (function () {
   // ===========================================================================
   // public enums
   // ===========================================================================
+  
+  // Privacy Status
   ACPCore.ACPMobilePrivacyStatusOptIn = 0;
   ACPCore.ACPMobilePrivacyStatusOptOut = 1;
   ACPCore.ACPMobilePrivacyStatusUnknown = 2;
 
+  // Log Level
   ACPCore.ACPMobileLogLevelError = 0;
   ACPCore.ACPMobileLogLevelWarning = 1;
   ACPCore.ACPMobileLogLevelDebug = 2;
@@ -43,6 +46,7 @@ var ACPCore = (function () {
   // ===========================================================================
   // public APIs
   // ===========================================================================
+  
   ACPCore.dispatchEvent = function (sdkEvent, success, fail) {
     var FUNCTION_NAME = 'dispatchEvent';
 
@@ -344,6 +348,11 @@ var ACPCore = (function () {
   ACPCore.openDeepLink = function (deepLink, success, fail) {
     var FUNCTION_NAME = 'openDeepLink';
 
+    if (!acpIsString(deepLink)) {
+      acpPrintNotAString('deepLink', FUNCTION_NAME);
+      return;
+    }
+
     if (success && !acpIsFunction(success)) {
       acpPrintNotAFunction('success', FUNCTION_NAME);
       return;
@@ -357,6 +366,41 @@ var ACPCore = (function () {
     return exec(success, fail, PLUGIN_NAME, FUNCTION_NAME, [deepLink]);
   };
 
+  // ===========================================================================
+  // App Tracking Transparency (ATT) APIs
+  // ===========================================================================
+
+  /**
+   * Requests App Tracking Transparency authorization from the user (iOS 14+)
+   * 
+   * IMPORTANT: 
+   * - Only call this AFTER the user has experienced value from your app
+   * - Apple rejects apps that request tracking too early
+   * - Consider showing a pre-permission screen explaining benefits
+   * - On Android, this returns success immediately (no ATT required)
+   * 
+   * @param {Function} success - Callback with status: "authorized", "denied", "restricted", "notDetermined", or "authorized_legacy" (iOS 13-)
+   * @param {Function} fail - Error callback
+   * 
+   * @example
+   * // DON'T call on app launch!
+   * // DO call after user sees value:
+   * function afterUserOnboarding() {
+   *   ACPCore.requestTrackingAuthorization(
+   *     function(status) {
+   *       console.log('ATT Status:', status);
+   *       if (status === 'authorized') {
+   *         // User granted permission - tracking enabled
+   *       } else {
+   *         // User denied or restricted - respect their choice
+   *       }
+   *     },
+   *     function(error) {
+   *       console.error('ATT Error:', error);
+   *     }
+   *   );
+   * }
+   */
   ACPCore.requestTrackingAuthorization = function (success, fail) {
     var FUNCTION_NAME = 'requestTrackingAuthorization';
 
@@ -373,6 +417,31 @@ var ACPCore = (function () {
     return exec(success, fail, PLUGIN_NAME, FUNCTION_NAME, []);
   };
 
+  /**
+   * Gets the current App Tracking Transparency authorization status (iOS 14+)
+   * Does NOT prompt the user - only checks current status
+   * 
+   * @param {Function} success - Callback with status: "authorized", "denied", "restricted", "notDetermined", "authorized_legacy", or "denied_legacy"
+   * @param {Function} fail - Error callback
+   * 
+   * @example
+   * ACPCore.getTrackingAuthorizationStatus(
+   *   function(status) {
+   *     console.log('Current ATT Status:', status);
+   *     
+   *     if (status === 'notDetermined') {
+   *       // User hasn't been asked yet - good time to show pre-permission screen
+   *     } else if (status === 'authorized') {
+   *       // Tracking is allowed
+   *     } else {
+   *       // Tracking denied or restricted
+   *     }
+   *   },
+   *   function(error) {
+   *     console.error('Error:', error);
+   *   }
+   * );
+   */
   ACPCore.getTrackingAuthorizationStatus = function (success, fail) {
     var FUNCTION_NAME = 'getTrackingAuthorizationStatus';
 

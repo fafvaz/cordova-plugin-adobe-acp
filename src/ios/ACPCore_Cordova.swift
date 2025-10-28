@@ -14,6 +14,8 @@ import AdSupport
   var appId: String!
   var initTime: String!
 
+  // MARK: - Event Dispatching
+  
   @objc(dispatchEvent:)
   func dispatchEvent(command: CDVInvokedUrlCommand) {
       self.commandDelegate.run(inBackground: {
@@ -25,8 +27,10 @@ import AdSupport
               self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
               return
           }
-          let event = Event(name: name, type: type, source: source, data: eventInput["data"] as? [String: String])
+          
+          let event = Event(name: name, type: type, source: source, data: eventInput["data"] as? [String: Any])
           MobileCore.dispatch(event: event)
+          
           let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
           self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
       })
@@ -35,7 +39,6 @@ import AdSupport
   @objc(dispatchEventWithResponseCallback:)
   func dispatchEventWithResponseCallback(command: CDVInvokedUrlCommand!) {
     self.commandDelegate.run(inBackground: {
-
       guard let eventInput = command.arguments[0] as? NSDictionary else {
         self.commandDelegate.send(
           CDVPluginResult(
@@ -50,8 +53,7 @@ import AdSupport
       MobileCore.dispatch(
         event: event,
         responseCallback: { (response: AEPCore.Event!) in
-          let responseEvent: NSDictionary! = self.getJavascriptDictionaryFromEvent(
-            event: response)
+          let responseEvent: NSDictionary! = self.getJavascriptDictionaryFromEvent(event: response)
           let pluginResult: CDVPluginResult! = CDVPluginResult(
             status: CDVCommandStatus_OK, messageAs: responseEvent as? [AnyHashable: Any])
           self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
@@ -62,7 +64,6 @@ import AdSupport
   @objc(dispatchResponseEvent:)
   func dispatchResponseEvent(command: CDVInvokedUrlCommand!) {
     self.commandDelegate.run(inBackground: {
-
       guard let inputResponseEvent = command.arguments[0] as? NSDictionary else {
         self.commandDelegate.send(
           CDVPluginResult(
@@ -76,7 +77,7 @@ import AdSupport
         self.commandDelegate.send(
           CDVPluginResult(
             status: CDVCommandStatus_ERROR,
-            messageAs: "Unable to dispatch event. InputResquest was malformed"),
+            messageAs: "Unable to dispatch event. InputRequest was malformed"),
           callbackId: command.callbackId)
         return
       }
@@ -84,16 +85,20 @@ import AdSupport
       self.commandDelegate.send(
         CDVPluginResult(
           status: CDVCommandStatus_ERROR,
-          messageAs: "Deprecated"),
+          messageAs: "Deprecated - use dispatchEvent instead"),
         callbackId: command.callbackId)
-
     })
   }
 
+  // MARK: - Core SDK Methods
+  
   @objc(downloadRules:)
   func downloadRules(command: CDVInvokedUrlCommand!) {
     self.commandDelegate.run(inBackground: {
-      let pluginResult: CDVPluginResult! = CDVPluginResult(status: CDVCommandStatus_ERROR)
+      // Not implemented on iOS
+      let pluginResult: CDVPluginResult! = CDVPluginResult(
+        status: CDVCommandStatus_ERROR, 
+        messageAs: "downloadRules not available on iOS")
       self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     })
   }
@@ -101,7 +106,6 @@ import AdSupport
   @objc(extensionVersion:)
   func extensionVersion(command: CDVInvokedUrlCommand!) {
     self.commandDelegate.run(inBackground: {
-
       let version: String! = self.initTime.appending(": ").appending(MobileCore.extensionVersion)
       let pluginResult: CDVPluginResult! = CDVPluginResult(
         status: CDVCommandStatus_OK, messageAs: version)
@@ -112,10 +116,9 @@ import AdSupport
   @objc(getPrivacyStatus:)
   func getPrivacyStatus(command: CDVInvokedUrlCommand!) {
     self.commandDelegate.run(inBackground: {
-
-      MobileCore.getPrivacyStatus { PrivacyStatus in
+      MobileCore.getPrivacyStatus { privacyStatus in
         let pluginResult: CDVPluginResult! = CDVPluginResult(
-          status: CDVCommandStatus_OK, messageAs: PrivacyStatus.rawValue)
+          status: CDVCommandStatus_OK, messageAs: privacyStatus.rawValue)
         self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
       }
     })
@@ -125,8 +128,13 @@ import AdSupport
   func getSdkIdentities(command: CDVInvokedUrlCommand!) {
     self.commandDelegate.run(inBackground: {
       MobileCore.getSdkIdentities { content, error in
-        if error == nil {
-          let pluginResult: CDVPluginResult! = CDVPluginResult(
+        if let error = error {
+          let pluginResult = CDVPluginResult(
+            status: CDVCommandStatus_ERROR, 
+            messageAs: error.localizedDescription)
+          self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+        } else {
+          let pluginResult = CDVPluginResult(
             status: CDVCommandStatus_OK, messageAs: content)
           self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
         }
@@ -137,11 +145,17 @@ import AdSupport
   @objc(setAdvertisingIdentifier:)
   func setAdvertisingIdentifier(command: CDVInvokedUrlCommand!) {
     self.commandDelegate.run(inBackground: {
-
-      let newIdentifier: String! = command.arguments[0] as? String
+      guard let newIdentifier = command.arguments[0] as? String else {
+        let pluginResult = CDVPluginResult(
+          status: CDVCommandStatus_ERROR, 
+          messageAs: "Invalid advertising identifier")
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+        return
+      }
+      
       MobileCore.setAdvertisingIdentifier(newIdentifier)
-
-      let pluginResult: CDVPluginResult! = CDVPluginResult(status: CDVCommandStatus_OK)
+      
+      let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
       self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     })
   }
@@ -149,13 +163,26 @@ import AdSupport
   @objc(setLogLevel:)
   func setLogLevel(command: CDVInvokedUrlCommand!) {
     self.commandDelegate.run(inBackground: {
-
-      let logLevel: AEPServices.LogLevel =
-        command.arguments[0] as? AEPServices.LogLevel ?? AEPServices.LogLevel.warning
+      guard let logLevelInt = command.arguments[0] as? Int else {
+        let pluginResult = CDVPluginResult(
+          status: CDVCommandStatus_ERROR, 
+          messageAs: "Invalid log level")
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+        return
+      }
+      
+      let logLevel: AEPServices.LogLevel
+      switch logLevelInt {
+        case 0: logLevel = .error
+        case 1: logLevel = .warning
+        case 2: logLevel = .debug
+        case 3: logLevel = .trace
+        default: logLevel = .warning
+      }
 
       MobileCore.setLogLevel(logLevel)
 
-      let pluginResult: CDVPluginResult! = CDVPluginResult(status: CDVCommandStatus_OK)
+      let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
       self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     })
   }
@@ -163,11 +190,25 @@ import AdSupport
   @objc(setPrivacyStatus:)
   func setPrivacyStatus(command: CDVInvokedUrlCommand!) {
     self.commandDelegate.run(inBackground: {
-      let privacyStatus: PrivacyStatus =
-        command.arguments[0] as? PrivacyStatus ?? PrivacyStatus.unknown
+      guard let privacyStatusInt = command.arguments[0] as? Int else {
+        let pluginResult = CDVPluginResult(
+          status: CDVCommandStatus_ERROR, 
+          messageAs: "Invalid privacy status")
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+        return
+      }
+      
+      let privacyStatus: PrivacyStatus
+      switch privacyStatusInt {
+        case 0: privacyStatus = .optedIn
+        case 1: privacyStatus = .optedOut
+        case 2: privacyStatus = .unknown
+        default: privacyStatus = .unknown
+      }
 
       MobileCore.setPrivacyStatus(privacyStatus)
-      let pluginResult: CDVPluginResult! = CDVPluginResult(status: CDVCommandStatus_OK)
+      
+      let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
       self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     })
   }
@@ -175,18 +216,16 @@ import AdSupport
   @objc(trackAction:)
   func trackAction(command: CDVInvokedUrlCommand!) {
     self.commandDelegate.run(inBackground: {
-
       let firstArg: AnyObject! = command.arguments[0] as AnyObject
       let secondArg: AnyObject! = command.arguments[1] as AnyObject
 
-      // allows the AEPCore.trackAction(cData) call
       if firstArg is NSDictionary {
         MobileCore.track(action: nil, data: firstArg as? [String: String])
       } else {
         MobileCore.track(action: firstArg as? String, data: secondArg as? [String: String])
       }
 
-      let pluginResult: CDVPluginResult! = CDVPluginResult(status: CDVCommandStatus_OK)
+      let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
       self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     })
   }
@@ -194,18 +233,16 @@ import AdSupport
   @objc(trackState:)
   func trackState(command: CDVInvokedUrlCommand!) {
     self.commandDelegate.run(inBackground: {
-
       let firstArg: AnyObject! = command.arguments[0] as AnyObject
       let secondArg: AnyObject! = command.arguments[1] as AnyObject
 
-      // allows the AEPCore.trackAction(cData) call
       if firstArg is NSDictionary {
         MobileCore.track(state: nil, data: firstArg as? [String: String])
       } else {
         MobileCore.track(state: firstArg as? String, data: secondArg as? [String: String])
       }
 
-      let pluginResult: CDVPluginResult! = CDVPluginResult(status: CDVCommandStatus_OK)
+      let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
       self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     })
   }
@@ -213,19 +250,18 @@ import AdSupport
   @objc(updateConfiguration:)
   func updateConfiguration(command: CDVInvokedUrlCommand!) {
     self.commandDelegate.run(inBackground: {
-
       guard let config = command.arguments[0] as? [String: Any] else {
         self.commandDelegate.send(
           CDVPluginResult(
             status: CDVCommandStatus_ERROR,
-            messageAs: "Unable to dispatch event. InputResponse was malformed"),
+            messageAs: "Invalid configuration object"),
           callbackId: command.callbackId)
         return
       }
 
       MobileCore.updateConfigurationWith(configDict: config)
 
-      let pluginResult: CDVPluginResult! = CDVPluginResult(status: CDVCommandStatus_OK)
+      let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
       self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     })
   }
@@ -233,7 +269,7 @@ import AdSupport
   @objc(getAppId:)
   func getAppId(command: CDVInvokedUrlCommand!) {
     self.commandDelegate.run(inBackground: {
-      let pluginResult: CDVPluginResult! = CDVPluginResult(
+      let pluginResult = CDVPluginResult(
         status: CDVCommandStatus_OK, messageAs: self.appId)
       self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     })
@@ -241,74 +277,136 @@ import AdSupport
 
   @objc(openDeepLink:)
   func openDeepLink(command: CDVInvokedUrlCommand!) {
-    self.commandDelegate.run(inBackground: {
-        ACPAppDelegatePush.openScreenByDeepLink(command.arguments[0] as! String)
-    })
+    guard let deepLink = command.arguments[0] as? String else {
+      let pluginResult = CDVPluginResult(
+        status: CDVCommandStatus_ERROR, 
+        messageAs: "Invalid deep link")
+      self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+      return
+    }
+    
+    ACPAppDelegatePush.openScreenByDeepLink(deepLink)
+    
+    let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
+    self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
   }
 
+  // MARK: - App Tracking Transparency (ATT)
+  
+  /// Requests App Tracking Transparency authorization from user
+  /// MUST be called on main thread as it shows UI
+  /// Best practice: Call after user has experienced app value, not immediately on launch
   @objc(requestTrackingAuthorization:)
   func requestTrackingAuthorization(command: CDVInvokedUrlCommand!) {
+    // CRITICAL: Must run on main thread for UI presentation
+    DispatchQueue.main.async {
+      if #available(iOS 14, *) {
+        ATTrackingManager.requestTrackingAuthorization { status in
+          let statusString: String
+          
+          switch status {
+          case .authorized:
+            statusString = "authorized"
+            // User authorized - collect IDFA and update Adobe privacy
+            let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
+            
+            if idfa != "00000000-0000-0000-0000-000000000000" {
+              MobileCore.setAdvertisingIdentifier(idfa)
+              MobileCore.setPrivacyStatus(.optedIn)
+              NSLog("ATT: Authorized with IDFA: %@", idfa)
+            } else {
+              // Zero UUID despite authorization (LAT enabled)
+              MobileCore.setPrivacyStatus(.optedOut)
+              NSLog("ATT: Authorized but LAT enabled")
+            }
+            
+          case .denied:
+            statusString = "denied"
+            MobileCore.setPrivacyStatus(.optedOut)
+            NSLog("ATT: Denied by user")
+            
+          case .restricted:
+            statusString = "restricted"
+            MobileCore.setPrivacyStatus(.optedOut)
+            NSLog("ATT: Restricted by device")
+            
+          case .notDetermined:
+            statusString = "notDetermined"
+            // This shouldn't happen after request, but handle it
+            MobileCore.setPrivacyStatus(.unknown)
+            NSLog("ATT: Not determined after request")
+            
+          @unknown default:
+            statusString = "unknown"
+            MobileCore.setPrivacyStatus(.unknown)
+            NSLog("ATT: Unknown status")
+          }
+          
+          let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: statusString)
+          self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+        }
+      } else {
+        // iOS 13 or earlier - ATT not available
+        // Check LAT setting and set accordingly
+        let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
+        
+        if idfa != "00000000-0000-0000-0000-000000000000" {
+          MobileCore.setAdvertisingIdentifier(idfa)
+          MobileCore.setPrivacyStatus(.optedIn)
+        } else {
+          MobileCore.setPrivacyStatus(.optedOut)
+        }
+        
+        let pluginResult = CDVPluginResult(
+          status: CDVCommandStatus_OK, 
+          messageAs: "authorized_legacy")
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+      }
+    }
+  }
+
+  /// Gets current ATT authorization status without prompting user
+  @objc(getTrackingAuthorizationStatus:)
+  func getTrackingAuthorizationStatus(command: CDVInvokedUrlCommand!) {
     self.commandDelegate.run(inBackground: {
-      ATTrackingManager.requestTrackingAuthorization { status in
+      if #available(iOS 14, *) {
+        let status = ATTrackingManager.trackingAuthorizationStatus
         let statusString: String
+        
         switch status {
         case .authorized:
           statusString = "authorized"
-          // Set IDFA and update privacy status
-          let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
-          MobileCore.setAdvertisingIdentifier(idfa)
-          MobileCore.setPrivacyStatus(.optedIn)
-        case .denied, .restricted:
-          statusString = status == .denied ? "denied" : "restricted"
-          // Update privacy status to optedOut
-          MobileCore.setPrivacyStatus(.optedOut)
+        case .denied:
+          statusString = "denied"
         case .notDetermined:
           statusString = "notDetermined"
-          // Keep as unknown
-          MobileCore.setPrivacyStatus(.unknown)
+        case .restricted:
+          statusString = "restricted"
         @unknown default:
           statusString = "unknown"
-          MobileCore.setPrivacyStatus(.unknown)
         }
+        
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: statusString)
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+      } else {
+        // iOS 13 or earlier - check LAT status
+        let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
+        let statusString = idfa != "00000000-0000-0000-0000-000000000000" ? "authorized_legacy" : "denied_legacy"
+        
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: statusString)
         self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
       }
     })
   }
 
-  @objc(getTrackingAuthorizationStatus:)
-  func getTrackingAuthorizationStatus(command: CDVInvokedUrlCommand!) {
-    self.commandDelegate.run(inBackground: {
-      let status = ATTrackingManager.trackingAuthorizationStatus
-      let statusString: String
-      switch status {
-      case .authorized:
-        statusString = "authorized"
-      case .denied:
-        statusString = "denied"
-      case .notDetermined:
-        statusString = "notDetermined"
-      case .restricted:
-        statusString = "restricted"
-      @unknown default:
-        statusString = "unknown"
-      }
-      let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: statusString)
-      self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
-    })
-  }
-
-  // ===========================================================================
-  // helper functions
-  // ===========================================================================
-
+  // MARK: - Helper Functions
+  
   func getExtensionEventFromJavascriptObject(event: NSDictionary!) -> AEPCore.Event! {
-
-    let newEvent = AEPCore.Event.init(
+    let newEvent = AEPCore.Event(
       name: event.value(forKey: "name") as! String,
       type: event.value(forKey: "type") as! String,
       source: event.value(forKey: "source") as! String,
-      data: event.value(forKey: "data") as? [String: String])
+      data: event.value(forKey: "data") as? [String: Any])
 
     return newEvent
   }
@@ -318,20 +416,21 @@ import AdSupport
       "name": event.name,
       "type": event.type,
       "source": event.source,
-      "data": event.data!,
+      "data": event.data ?? [:],
     ]
   }
 
-  // ===============================================================
-  // Plugin lifecycle events
-  // ===============================================================
+  // MARK: - Plugin Lifecycle
+  
   override func pluginInitialize() {
-
-    let date: NSDate! = NSDate()
-    let dateFormatter: DateFormatter! = DateFormatter()
+    let date = NSDate()
+    let dateFormatter = DateFormatter()
     dateFormatter.dateFormat = "dd/MM/yyyy HH:mm:ss"
     initTime = dateFormatter.string(from: date as Date)
+    
     self.appId = Bundle.main.object(forInfoDictionaryKey: "AppId") as? String
+    
+    // Initialize Adobe SDK extensions
     ACPAppDelegatePush.registerExtensions()
   }
 }

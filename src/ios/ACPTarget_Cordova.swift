@@ -105,18 +105,24 @@ import AEPTarget
   }
 
   @objc(retrieveLocationContent:)
-func retrieveLocationContent(command: CDVInvokedUrlCommand) {
+  func retrieveLocationContent(command: CDVInvokedUrlCommand) {
     self.commandDelegate.run(inBackground: {
         guard let locationRequests = command.arguments[0] as? [String: [String: Any]] else {
             let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: "Invalid location requests")
             self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
             return
         }
+        
         var requestArray: [TargetRequest] = []
+        
         for (_, requestDict) in locationRequests {
-            guard let mboxName = requestDict["mboxName"] as? String else { continue }
+            guard let mboxName = requestDict["mboxName"] as? String else { 
+                continue 
+            }
+            
             let mboxParam = requestDict["mboxParameter"] as? [String: String]
             let profileParam = requestDict["profileParameter"] as? [String: String]
+            
             var orderParameters: TargetOrder?
             if let orderParam = requestDict["orderParameter"] as? [String: Any],
                let orderId = orderParam["orderId"] as? String,
@@ -124,27 +130,50 @@ func retrieveLocationContent(command: CDVInvokedUrlCommand) {
                let purchasedIds = orderParam["orderPurchasedIds"] as? [String] {
                 orderParameters = TargetOrder(id: orderId, total: orderTotal, purchasedProductIds: purchasedIds)
             }
+            
             var productParameter: TargetProduct?
             if let productParam = requestDict["productParameter"] as? [String: Any],
                let id = productParam["id"] as? String,
                let categoryId = productParam["categoryId"] as? String {
                 productParameter = TargetProduct(productId: id, categoryId: categoryId)
             }
+            
             let targetParameters = TargetParameters(
                 parameters: mboxParam,
                 profileParameters: profileParam,
                 order: orderParameters,
                 product: productParameter)
-            let requestObject = TargetRequest(mboxName: mboxName, defaultContent: "defaultContent", targetParameters: targetParameters, contentCallback: nil)
+            
+            // Create request with callback to send results back to JavaScript
+            let requestObject = TargetRequest(
+                mboxName: mboxName, 
+                defaultContent: "defaultContent", 
+                targetParameters: targetParameters,
+                contentCallback: { content in
+                    // Send each mbox response back to JavaScript
+                    let response = [
+                        "content": content ?? "",
+                        "mboxName": mboxName
+                    ]
+                    
+                    let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: response)
+                    pluginResult?.setKeepCallbackAs(true) // Allow multiple callbacks
+                    self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+                }
+            )
+            
             requestArray.append(requestObject)
         }
+        
         guard let requestLoc = command.arguments[1] as? [String: Any] else {
             let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: "Invalid request location")
             self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
             return
         }
+        
         let mboxLocParam = requestLoc["mboxParameter"] as? [String: String]
         let profileLocParam = requestLoc["profileParameter"] as? [String: String]
+        
         var orderLocParameters: TargetOrder?
         if let orderLocParam = requestLoc["orderParameter"] as? [String: Any],
            let orderId = orderLocParam["orderId"] as? String,
@@ -152,22 +181,31 @@ func retrieveLocationContent(command: CDVInvokedUrlCommand) {
            let purchasedIds = orderLocParam["orderPurchasedIds"] as? [String] {
             orderLocParameters = TargetOrder(id: orderId, total: orderTotal, purchasedProductIds: purchasedIds)
         }
+        
         var productLocParameter: TargetProduct?
         if let productLocParam = requestLoc["productParameter"] as? [String: Any],
            let id = productLocParam["id"] as? String,
            let categoryId = productLocParam["categoryId"] as? String {
             productLocParameter = TargetProduct(productId: id, categoryId: categoryId)
         }
+        
         let targetLocParameters = TargetParameters(
             parameters: mboxLocParam,
             profileParameters: profileLocParam,
             order: orderLocParameters,
             product: productLocParameter)
+        
+        // Make the Target request
         Target.retrieveLocationContent(requestArray, with: targetLocParameters)
-        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
-        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+        
+        // Send final success callback
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            let finalResult = CDVPluginResult(status: CDVCommandStatus_OK)
+            finalResult?.setKeepCallbackAs(false) // Stop callbacks
+            self.commandDelegate.send(finalResult, callbackId: command.callbackId)
+        }
     })
-}
+  }
 
   @objc(locationClicked:)
   func locationClicked(command: CDVInvokedUrlCommand!) {
