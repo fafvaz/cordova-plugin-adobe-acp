@@ -29,23 +29,31 @@ import UserNotifications
           self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
           return
       }
+      
       let center = UNUserNotificationCenter.current()
       center.delegate = self
       center.requestAuthorization(options: [.sound, .alert, .badge]) { granted, error in
           self.typeId = Bundle.main.object(forInfoDictionaryKey: "TypeId") as? String ?? ""
+          
           if error == nil {
               MobileCore.collectPii([self.typeId: valueTypeId])
-              UIApplication.shared.registerForRemoteNotifications()
+              
+              DispatchQueue.main.async {
+                  UIApplication.shared.registerForRemoteNotifications()
+              }
+              
               NSLog("Push registration success.")
           } else {
               NSLog("Push registration FAILED: %@", error?.localizedDescription ?? "")
           }
+          
           let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
           self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
       }
       MobileCore.setLogLevel(.debug)
   }
 
+  @objc(getTypeId:)
   func getTypeId(command: CDVInvokedUrlCommand!) {
     self.commandDelegate.run(inBackground: {
       let pluginResult: CDVPluginResult! = CDVPluginResult(

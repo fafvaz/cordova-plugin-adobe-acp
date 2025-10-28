@@ -10,6 +10,8 @@ import AEPSignal
 import AEPTarget
 import AEPUserProfile
 import FirebaseMessaging
+import AppTrackingTransparency
+import AdSupport
 
 @objc(ACPAppDelegatePush) class ACPAppDelegatePush: NSObject {
 
@@ -33,7 +35,9 @@ import FirebaseMessaging
         Target.self
      ],
       {
-        MobileCore.setPrivacyStatus(.optedIn)
+        // Set privacy status based on ATT authorization
+        setPrivacyStatusBasedOnATT()
+        
         MobileCore.configureWith(appId: appId)
         if appState != .background {
           MobileCore.lifecycleStart(additionalContextData: nil)
@@ -46,6 +50,34 @@ import FirebaseMessaging
     NotificationCenter.default.addObserver(
       self, selector: #selector(handleClickNotificationDispatched(notification:)),
       name: NSNotification.Name("FirebaseRemoteNotificationClickedDispatch"), object: nil)
+  }
+
+  static func setPrivacyStatusBasedOnATT() {
+    let attStatus = ATTrackingManager.trackingAuthorizationStatus
+    
+    switch attStatus {
+    case .authorized:
+      // User authorized tracking - set optedIn and IDFA
+      MobileCore.setPrivacyStatus(.optedIn)
+      let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
+      MobileCore.setAdvertisingIdentifier(idfa)
+      print("Adobe Privacy: OptedIn (ATT Authorized)")
+      
+    case .denied, .restricted:
+      // User denied or restricted - set optedOut
+      MobileCore.setPrivacyStatus(.optedOut)
+      print("Adobe Privacy: OptedOut (ATT Denied/Restricted)")
+      
+    case .notDetermined:
+      // User hasn't decided yet - set unknown
+      MobileCore.setPrivacyStatus(.unknown)
+      print("Adobe Privacy: Unknown (ATT Not Determined)")
+      
+    @unknown default:
+      // Fallback for future cases
+      MobileCore.setPrivacyStatus(.unknown)
+      print("Adobe Privacy: Unknown (ATT Unknown)")
+    }
   }
 
   @objc static func handleNotificationDispatched(notification: NSNotification) {

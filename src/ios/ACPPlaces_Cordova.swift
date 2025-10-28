@@ -67,6 +67,9 @@ import CoreLocation
           self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
         } catch let error {
           print(error)
+          let pluginResult: CDVPluginResult! = CDVPluginResult(
+            status: CDVCommandStatus_ERROR, messageAs: error.localizedDescription)
+          self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
         }
       }
     })
@@ -90,7 +93,7 @@ import CoreLocation
           currentPoisString = self.generatePOIString(retrievedPois: retrievedPois)
         })
 
-      DispatchQueue.main.asyncAfter(deadline: .now() + 1) {  // in half a second...
+      DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
         let pluginResult: CDVPluginResult! = CDVPluginResult(
           status: CDVCommandStatus_OK, messageAs: currentPoisString)
         self.commandDelegate.send(pluginResult, callbackId: command.callbackId)

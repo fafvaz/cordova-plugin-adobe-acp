@@ -6,6 +6,8 @@ import AEPPlaces
 import AEPServices
 import AEPTarget
 import AEPUserProfile
+import AppTrackingTransparency
+import AdSupport
 
 @objc(ACPCore_Cordova) class ACPCore_Cordova: CDVPlugin {
 
@@ -237,13 +239,64 @@ import AEPUserProfile
     })
   }
 
+  @objc(openDeepLink:)
+  func openDeepLink(command: CDVInvokedUrlCommand!) {
+    self.commandDelegate.run(inBackground: {
+        ACPAppDelegatePush.openScreenByDeepLink(command.arguments[0] as! String)
+    })
+  }
 
-    @objc(openDeepLink:)
-    func openDeepLink(command: CDVInvokedUrlCommand!) {
-      self.commandDelegate.run(inBackground: {
-          ACPAppDelegatePush.openScreenByDeepLink(command.arguments[0] as! String)
-      })
-    }
+  @objc(requestTrackingAuthorization:)
+  func requestTrackingAuthorization(command: CDVInvokedUrlCommand!) {
+    self.commandDelegate.run(inBackground: {
+      ATTrackingManager.requestTrackingAuthorization { status in
+        let statusString: String
+        switch status {
+        case .authorized:
+          statusString = "authorized"
+          // Set IDFA and update privacy status
+          let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
+          MobileCore.setAdvertisingIdentifier(idfa)
+          MobileCore.setPrivacyStatus(.optedIn)
+        case .denied, .restricted:
+          statusString = status == .denied ? "denied" : "restricted"
+          // Update privacy status to optedOut
+          MobileCore.setPrivacyStatus(.optedOut)
+        case .notDetermined:
+          statusString = "notDetermined"
+          // Keep as unknown
+          MobileCore.setPrivacyStatus(.unknown)
+        @unknown default:
+          statusString = "unknown"
+          MobileCore.setPrivacyStatus(.unknown)
+        }
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: statusString)
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+      }
+    })
+  }
+
+  @objc(getTrackingAuthorizationStatus:)
+  func getTrackingAuthorizationStatus(command: CDVInvokedUrlCommand!) {
+    self.commandDelegate.run(inBackground: {
+      let status = ATTrackingManager.trackingAuthorizationStatus
+      let statusString: String
+      switch status {
+      case .authorized:
+        statusString = "authorized"
+      case .denied:
+        statusString = "denied"
+      case .notDetermined:
+        statusString = "notDetermined"
+      case .restricted:
+        statusString = "restricted"
+      @unknown default:
+        statusString = "unknown"
+      }
+      let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: statusString)
+      self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+    })
+  }
 
   // ===========================================================================
   // helper functions

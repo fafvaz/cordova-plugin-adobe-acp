@@ -172,6 +172,9 @@
         <config-file target="*-Info.plist" parent="NSLocationAlwaysAndWhenInUseUsageDescription">
             <string>Location permission necessary for geofencing with Adobe Experience Platform</string>
         </config-file>
+        <config-file target="*-Info.plist" parent="NSUserTrackingUsageDescription">
+            <string>This app would like to track your activity across other companies' apps and websites to provide personalized content and improve your experience</string>
+        </config-file>
         <config-file parent="/*" target="config.xml">
             <feature name="ACPCore_Cordova">
                 <param name="ios-package" value="ACPCore_Cordova" />

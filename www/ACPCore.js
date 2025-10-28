@@ -43,14 +43,6 @@ var ACPCore = (function () {
   // ===========================================================================
   // public APIs
   // ===========================================================================
-/*  ACPCore.getPushNotificationStatus = function (success, fail) {
-    return exec(success, fail, PLUGIN_NAME, "getPushNotificationStatus", []);
-  };
-  
-  ACPCore.requestPushNotificationPermission = function (success, fail) {
-      return exec(success, fail, PLUGIN_NAME, "requestPushNotificationPermission", []);
-  };
-*/  
   ACPCore.dispatchEvent = function (sdkEvent, success, fail) {
     var FUNCTION_NAME = 'dispatchEvent';
 
@@ -349,7 +341,6 @@ var ACPCore = (function () {
     return exec(success, fail, PLUGIN_NAME, FUNCTION_NAME, []);
   };
 
- 
   ACPCore.openDeepLink = function (deepLink, success, fail) {
     var FUNCTION_NAME = 'openDeepLink';
 
@@ -366,6 +357,37 @@ var ACPCore = (function () {
     return exec(success, fail, PLUGIN_NAME, FUNCTION_NAME, [deepLink]);
   };
 
+  ACPCore.requestTrackingAuthorization = function (success, fail) {
+    var FUNCTION_NAME = 'requestTrackingAuthorization';
+
+    if (success && !acpIsFunction(success)) {
+      acpPrintNotAFunction('success', FUNCTION_NAME);
+      return;
+    }
+
+    if (fail && !acpIsFunction(fail)) {
+      acpPrintNotAFunction('fail', FUNCTION_NAME);
+      return;
+    }
+
+    return exec(success, fail, PLUGIN_NAME, FUNCTION_NAME, []);
+  };
+
+  ACPCore.getTrackingAuthorizationStatus = function (success, fail) {
+    var FUNCTION_NAME = 'getTrackingAuthorizationStatus';
+
+    if (success && !acpIsFunction(success)) {
+      acpPrintNotAFunction('success', FUNCTION_NAME);
+      return;
+    }
+
+    if (fail && !acpIsFunction(fail)) {
+      acpPrintNotAFunction('fail', FUNCTION_NAME);
+      return;
+    }
+
+    return exec(success, fail, PLUGIN_NAME, FUNCTION_NAME, []);
+  };
 
   return ACPCore;
 })();

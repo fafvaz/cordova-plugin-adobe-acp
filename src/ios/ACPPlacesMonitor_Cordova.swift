@@ -3,8 +3,7 @@ import AEPLifecycle
 import AEPPlaces
 import CoreLocation
 
-@objc(ACPPlacesMonitor_Cordova) class ACPPlacesMonitor_Cordova: CDVPlugin, CLLocationManagerDelegate
-{
+@objc(ACPPlacesMonitor_Cordova) class ACPPlacesMonitor_Cordova: CDVPlugin, CLLocationManagerDelegate {
 
   var locationManager: CLLocationManager?
   var started = false
@@ -12,9 +11,12 @@ import CoreLocation
   @objc(start:)
   func start(command: CDVInvokedUrlCommand) {
       let authorizationStatus = CLLocationManager.authorizationStatus()
+      
       if authorizationStatus == .notDetermined {
           locationManager?.requestWhenInUseAuthorization()
-          // Defer response until authorization is granted (handled in delegate)
+          // Note: Callback will be handled in delegate method
+          let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "Requesting authorization")
+          self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
       } else if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways {
           self.started = true
           locationManager?.startUpdatingLocation()
@@ -79,6 +81,14 @@ import CoreLocation
   @objc(stop:)
   func stop(command: CDVInvokedUrlCommand!) {
     self.locationManager?.stopUpdatingLocation()
+    
+    // Stop monitoring all regions
+    if let monitoredRegions = self.locationManager?.monitoredRegions {
+        for region in monitoredRegions {
+            self.locationManager?.stopMonitoring(for: region)
+        }
+    }
+    
     self.started = false
     let pluginResult: CDVPluginResult! = CDVPluginResult(
       status: CDVCommandStatus_OK, messageAs: "Stopped")
@@ -88,26 +98,26 @@ import CoreLocation
   override func pluginInitialize() {
     locationManager = CLLocationManager()
     locationManager?.delegate = self
+    locationManager?.desiredAccuracy = kCLLocationAccuracyBest
+    locationManager?.distanceFilter = kCLDistanceFilterNone
   }
+
+  // MARK: - CLLocationManagerDelegate
 
   func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-    print("error:: \(error.localizedDescription)")
+    print("Location error: \(error.localizedDescription)")
   }
 
-  func locationManager(
-    _ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus
-  ) {
-    if status == .authorizedWhenInUse {
+  func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+    if status == .authorizedWhenInUse || status == .authorizedAlways {
       locationManager?.requestLocation()
     }
   }
 
   func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-
-    if locations.first != nil {
-      print("location:: (location)")
+    if let location = locations.first {
+      print("Location updated: \(location)")
     }
-
   }
 
   func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
