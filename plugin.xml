@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns:android="http://schemas.android.com/apk/res/android" id="cordova-acp" version="0.0.2"
+    xmlns="http://apache.org/cordova/ns/plugins/1.0">
+    <name>cordova-acp</name>
+    <description>ACP Plugins bundle for Cordova</description>
+    <license>Apache 2.0</license>
+    <keywords>cordova,adobe,core,acpcore,target,acptarget,analytics,acpanalytics,marketing</keywords>
+
+    <preference name="APP_ID" default="6495a7895c9a/78672f12ac93/launch-86a02caa8ebf"/>
+    <preference name="TYPE_ID" default="fiscalnumber"/>
+
+    <!-- JavaScript modules for Adobe Experience Platform APIs -->
+    <js-module name="cordova-acpcore" src="www/ACPCore.js">
+        <clobbers target="ACPCore" />
+    </js-module>
+    <js-module name="cordova-acpidentity" src="www/ACPIdentity.js">
+        <clobbers target="ACPIdentity" />
+    </js-module>
+    <js-module name="cordova-acplifecycle" src="www/ACPLifecycle.js">
+        <clobbers target="ACPLifecycle" />
+    </js-module>
+    <js-module name="cordova-acpsignal" src="www/ACPSignal.js">
+        <clobbers target="ACPSignal" />
+    </js-module>
+    <js-module name="cordova-acptarget" src="www/ACPTarget.js">
+        <clobbers target="ACPTarget" />
+    </js-module>
+    <js-module name="cordova-acpanalytics" src="www/ACPAnalytics.js">
+        <clobbers target="ACPAnalytics" />
+    </js-module>
+    <js-module name="cordova-acpplaces" src="www/ACPPlaces.js">
+        <clobbers target="ACPPlaces" />
+    </js-module>
+    <js-module name="cordova-acpplaces-monitor" src="www/ACPPlacesMonitor.js">
+        <clobbers target="ACPPlacesMonitor" />
+    </js-module>
+    <js-module name="cordova-acpcampaign" src="www/ACPCampaign.js">
+        <clobbers target="ACPCampaign" />
+    </js-module>
+    <js-module name="cordova-aepassurance" src="www/AEPAssurance.js">
+        <clobbers target="AEPAssurance" />
+    </js-module>
+
+    <!-- Android platform configuration -->
+    <platform name="android">
+        <config-file target="res/values/strings.xml" parent="/*">
+            <string name="AppId">$APP_ID</string>
+        </config-file>
+        <config-file target="res/values/strings.xml" parent="/*">
+            <string name="TypeId">$TYPE_ID</string>
+        </config-file>
+        <config-file parent="/*" target="res/xml/config.xml">
+            <feature name="ACPCore_Cordova">
+                <param name="android-package" value="com.adobe.marketing.mobile.cordova.ACPCore_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="res/xml/config.xml">
+            <feature name="ACPIdentity_Cordova">
+                <param name="android-package" value="com.adobe.marketing.mobile.cordova.ACPIdentity_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="res/xml/config.xml">
+            <feature name="ACPLifecycle_Cordova">
+                <param name="android-package" value="com.adobe.marketing.mobile.cordova.ACPLifecycle_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="res/xml/config.xml">
+            <feature name="ACPSignal_Cordova">
+                <param name="android-package" value="com.adobe.marketing.mobile.cordova.ACPSignal_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="res/xml/config.xml">
+            <feature name="ACPTarget_Cordova">
+                <param name="android-package" value="com.adobe.marketing.mobile.cordova.ACPTarget_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="res/xml/config.xml">
+            <feature name="ACPAnalytics_Cordova">
+                <param name="android-package" value="com.adobe.marketing.mobile.cordova.ACPAnalytics_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="res/xml/config.xml">
+            <feature name="ACPPlaces_Cordova">
+                <param name="android-package" value="com.adobe.marketing.mobile.cordova.ACPPlaces_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="res/xml/config.xml">
+            <feature name="ACPPlacesMonitor_Cordova">
+                <param name="android-package" value="com.adobe.marketing.mobile.cordova.ACPPlacesMonitor_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="res/xml/config.xml">
+            <feature name="ACPCampaign_Cordova">
+                <param name="android-package" value="com.adobe.marketing.mobile.cordova.ACPCampaign_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="res/xml/config.xml">
+            <feature name="AEPAssurance_Cordova">
+                <param name="android-package" value="com.adobe.marketing.mobile.cordova.AEPAssurance_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/manifest" target="AndroidManifest.xml">
+            <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+            <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+            <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+            <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+        </config-file>
+        <config-file parent="/manifest/application" target="AndroidManifest.xml">
+            <receiver android:name="com.adobe.marketing.mobile.LocalNotificationHandler" />
+            <receiver android:name=".NotificationDismissedReceiver" />
+            <receiver android:name="com.adobe.marketing.mobile.cordova.GeofenceBroadcastReceiver" />
+            <activity android:name="com.adobe.marketing.mobile.FullscreenMessageActivity" />
+            <activity android:name="com.adobe.marketing.mobile.MessageFullScreenActivity"
+                      android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen"
+                      android:windowSoftInputMode="adjustUnspecified|stateHidden" />
+            <receiver android:name="com.adobe.marketing.mobile.MessageNotificationHandler" />
+        </config-file>
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.galp.adbmarkcloud.devop" />
+            </intent-filter>
+        </activity>
+        <source-file src="src/android/ACPFirebaseMessagingService.java" target-dir="src/com/adobe/marketing/mobile/cordova" />
+        <source-file src="src/android/ACPCore_Cordova.java" target-dir="src/com/adobe/marketing/mobile/cordova" />
+        <source-file src="src/android/ACPIdentity_Cordova.java" target-dir="src/com/adobe/marketing/mobile/cordova" />
+        <source-file src="src/android/ACPLifecycle_Cordova.java" target-dir="src/com/adobe/marketing/mobile/cordova" />
+        <source-file src="src/android/ACPSignal_Cordova.java" target-dir="src/com/adobe/marketing/mobile/cordova" />
+        <source-file src="src/android/ACPTarget_Cordova.java" target-dir="src/com/adobe/marketing/mobile/cordova" />
+        <source-file src="src/android/ACPAnalytics_Cordova.java" target-dir="src/com/adobe/marketing/mobile/cordova" />
+        <source-file src="src/android/ACPPlaces_Cordova.java" target-dir="src/com/adobe/marketing/mobile/cordova" />
+        <source-file src="src/android/ACPCampaign_Cordova.java" target-dir="src/com/adobe/marketing/mobile/cordova" />
+        <source-file src="src/android/AEPAssurance_Cordova.java" target-dir="src/com/adobe/marketing/mobile/cordova" />
+        <source-file src="src/android/NotificationDismissedReceiver.java" target-dir="src/com/adobe/marketing/mobile/cordova" />
+        <source-file src="src/android/ACPPlacesMonitor_Cordova.java" target-dir="src/com/adobe/marketing/mobile/cordova"/>
+        <source-file src="src/android/GeofenceBroadcastReceiver.java" target-dir="src/com/adobe/marketing/mobile/cordova"/>
+        <framework custom="true" src="src/android/ACP_Cordova.gradle" type="gradleReference" />
+    </platform>
+
+    <!-- iOS platform configuration -->
+    <platform name="ios">
+        <dependency id="cordova-plugin-add-swift-support" version="2.0.2"/>
+
+        <config-file parent="/*" target="config.xml">
+            <preference name="SwiftVersion" value="5.0" />
+        </config-file>
+        <config-file target="*-Info.plist" parent="AppId">
+            <string>$APP_ID</string>
+        </config-file>
+        <config-file target="*-Info.plist" parent="TypeId">
+            <string>$TYPE_ID</string>
+        </config-file>
+        <config-file target="*-Info.plist" parent="NSLocationAlwaysUsageDescription">
+            <string>Location permission necessary for geofencing with Adobe Experience Platform</string>
+        </config-file>
+        <config-file target="*-Info.plist" parent="NSLocationWhenInUseUsageDescription">
+            <string>Location permission necessary for geofencing with Adobe Experience Platform</string>
+        </config-file>
+        <config-file target="*-Info.plist" parent="NSLocationAlwaysAndWhenInUseUsageDescription">
+            <string>Location permission necessary for geofencing with Adobe Experience Platform</string>
+        </config-file>
+        <config-file parent="/*" target="config.xml">
+            <feature name="ACPCore_Cordova">
+                <param name="ios-package" value="ACPCore_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="config.xml">
+            <feature name="ACPIdentity_Cordova">
+                <param name="ios-package" value="ACPIdentity_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="config.xml">
+            <feature name="ACPLifecycle_Cordova">
+                <param name="ios-package" value="ACPLifecycle_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="config.xml">
+            <feature name="ACPSignal_Cordova">
+                <param name="ios-package" value="ACPSignal_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="config.xml">
+            <feature name="ACPTarget_Cordova">
+                <param name="ios-package" value="ACPTarget_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="config.xml">
+            <feature name="ACPAnalytics_Cordova">
+                <param name="ios-package" value="ACPAnalytics_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="config.xml">
+            <feature name="ACPPlaces_Cordova">
+                <param name="ios-package" value="ACPPlaces_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="config.xml">
+            <feature name="ACPPlacesMonitor_Cordova">
+                <param name="ios-package" value="ACPPlacesMonitor_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="config.xml">
+            <feature name="ACPCampaign_Cordova">
+                <param name="ios-package" value="ACPCampaign_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="config.xml">
+            <feature name="AEPAssurance_Cordova">
+                <param name="ios-package" value="AEPAssurance_Cordova" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+        <header-file src="src/ios/AppDelegate+Push.h" />
+        <source-file src="src/ios/AppDelegate+Push.m" target-dir="cordova-adobe-acp"/>
+        <source-file src="src/ios/ACPAnalytics_Cordova.swift" target-dir="cordova-adobe-acp"/>
+        <source-file src="src/ios/ACPAppDelegatePush.swift" target-dir="cordova-adobe-acp"/>
+        <source-file src="src/ios/ACPCampaign_Cordova.swift" target-dir="cordova-adobe-acp"/>
+        <source-file src="src/ios/ACPCore_Cordova.swift" target-dir="cordova-adobe-acp"/>
+        <source-file src="src/ios/ACPIdentity_Cordova.swift" target-dir="cordova-adobe-acp"/>
+        <source-file src="src/ios/ACPLifecycle_Cordova.swift" target-dir="cordova-adobe-acp"/>
+        <source-file src="src/ios/ACPPlaces_Cordova.swift" target-dir="cordova-adobe-acp"/>
+        <source-file src="src/ios/ACPSignal_Cordova.swift" target-dir="cordova-adobe-acp"/>
+        <source-file src="src/ios/ACPTarget_Cordova.swift" target-dir="cordova-adobe-acp"/>
+        <source-file src="src/ios/AEPAssurance_Cordova.swift" target-dir="cordova-adobe-acp"/>
+        <source-file src="src/ios/ACPPlacesMonitor_Cordova.swift" target-dir="cordova-adobe-acp"/>
+        <podspec>
+            <config>
+                <source url="https://github.com/CocoaPods/Specs.git" />
+            </config>
+            <pods use-frameworks="true">
+                <pod name="AEPCore" spec="~> 5.0.0" swift-version="5.0" />
+                <pod name="AEPLifecycle" spec="~> 5.0.0" swift-version="5.0" />
+                <pod name="AEPIdentity" spec="~> 5.0.0" swift-version="5.0" />
+                <pod name="AEPSignal" spec="~> 5.0.0" swift-version="5.0" />
+                <pod name="AEPTarget" spec="~> 5.0.0" swift-version="5.0" />
+                <pod name="AEPAnalytics" spec="~> 5.0.0" swift-version="5.0" />
+                <pod name="AEPUserProfile" spec="~> 5.0.0" swift-version="5.0" />
+                <pod name="AEPMobileServices" spec="~> 3.0.0" swift-version="5.0" />
+                <pod name="AEPPlaces" spec="~> 5.0.0" swift-version="5.0" />
+                <pod name="AEPCampaign" spec="~> 5.0.0" swift-version="5.0" />
+                <pod name="AEPAssurance" spec="~> 5.0.0" swift-version="5.0" />
+            </pods>
+        </podspec>
+    </platform>
+</plugin>

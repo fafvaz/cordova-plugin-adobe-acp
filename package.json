@@ -1,0 +1,34 @@
+{
+  "name": "@adobe/cordova-acp",
+  "version": "0.0.2",
+  "description": "Adobe Experience Platform - Plugins bundle for Cordova apps.",
+  "cordova": {
+    "id": "cordova-acp",
+    "platforms": [
+      "ios",
+      "android"
+    ]
+  },
+  "keywords": [
+    "cordova",
+    "adobe",
+    "core",
+    "acpcore",
+    "target",
+    "acptarget",
+    "debugging",
+    "analytics",
+    "aepassurance",
+    "assurance",
+    "acpanalytics",
+    "places",
+    "acpplaces",
+    "acpplacesmonitor",
+    "marketing",
+    "ecosystem:cordova",
+    "cordova-ios",
+    "cordova-android"
+  ],
+  "author": "Adobe",
+  "license": "Apache 2.0"
+}

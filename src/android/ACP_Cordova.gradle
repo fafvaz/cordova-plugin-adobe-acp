@@ -1,0 +1,25 @@
+repositories{
+    
+    jcenter()
+    flatDir{
+        dirs 'libs'
+    }
+}
+
+dependencies {
+    // adobe
+    implementation 'com.adobe.marketing.mobile:analytics:2.+' 
+    implementation 'com.adobe.marketing.mobile:mobileservices:1.+' // Não tem update. Remover
+    implementation 'com.adobe.marketing.mobile:target:2.+' 
+    implementation 'com.adobe.marketing.mobile:userprofile:2.+'
+    implementation 'com.adobe.marketing.mobile:core:2.+'
+    implementation 'com.adobe.marketing.mobile:lifecycle:2.+'
+    implementation 'com.adobe.marketing.mobile:identity:2.+'
+    implementation 'com.adobe.marketing.mobile:signal:2.+'
+    implementation 'com.adobe.marketing.mobile:places:2.+'
+    implementation 'com.adobe.marketing.mobile:campaign:2.+'
+    implementation 'com.google.firebase:firebase-messaging:19.0.1'
+    implementation 'com.google.firebase:firebase-core:17.0.1'
+    implementation 'com.google.android.gms:play-services-location:21.0.1'
+    implementation 'com.adobe.marketing.mobile:assurance:2.+'
+}
