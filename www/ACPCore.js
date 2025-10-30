@@ -12,7 +12,7 @@
 
 var ACPCore = (function () {
   var ACPCore = (typeof exports !== 'undefined' && exports) || {};
-  var exec = cordova.require('cordova/exec'); // eslint-disable-line no-undef
+  var exec = cordova.require('cordova/exec');
 
   var PLUGIN_NAME = 'ACPCore_Cordova';
 
@@ -44,7 +44,98 @@ var ACPCore = (function () {
   ACPCore.ACPMobileLogLevelVerbose = 3;
 
   // ===========================================================================
-  // public APIs
+  // NEW: Consent Management APIs
+  // ===========================================================================
+
+  /**
+   * Handles user consent for Adobe SDK initialization
+   * Call this after OneTrust or your consent management platform has a decision
+   * 
+   * CRITICAL: This must be called before the SDK can be used!
+   * - If granted=true: SDK initializes and configures with appId
+   * - If granted=false: SDK sets privacy to opted-out and does NOT initialize
+   * 
+   * @param {Boolean} granted - true if user granted consent, false if denied
+   * @param {Function} success - Success callback
+   * @param {Function} fail - Error callback
+   * 
+   * @example
+   * // After OneTrust initialization:
+   * OneTrust.getConsentStatus(function(consentStatus) {
+   *   var hasConsent = consentStatus.includes('C0001'); // Performance cookies
+   *   
+   *   ACPCore.handleUserConsent(hasConsent, 
+   *     function() {
+   *       console.log('Adobe SDK consent handled');
+   *       // Now safe to use SDK features
+   *     },
+   *     function(error) {
+   *       console.error('Consent error:', error);
+   *     }
+   *   );
+   * });
+   */
+  ACPCore.handleUserConsent = function (granted, success, fail) {
+    var FUNCTION_NAME = 'handleUserConsent';
+
+    if (typeof granted !== 'boolean') {
+      console.log(
+        "Ignoring call to '" + FUNCTION_NAME + 
+        "'. The 'granted' parameter must be a boolean."
+      );
+      return;
+    }
+
+    if (success && !acpIsFunction(success)) {
+      acpPrintNotAFunction('success', FUNCTION_NAME);
+      return;
+    }
+
+    if (fail && !acpIsFunction(fail)) {
+      acpPrintNotAFunction('fail', FUNCTION_NAME);
+      return;
+    }
+
+    return exec(success, fail, PLUGIN_NAME, FUNCTION_NAME, [granted]);
+  };
+
+  /**
+   * Updates privacy status based on current ATT authorization
+   * This is called automatically when consent is handled, but can be called
+   * manually if ATT status changes (e.g., user changes in Settings)
+   * 
+   * @param {Function} success - Success callback
+   * @param {Function} fail - Error callback
+   * 
+   * @example
+   * // If user changes tracking permission in iOS Settings:
+   * ACPCore.setPrivacyStatusBasedOnATT(
+   *   function() {
+   *     console.log('Privacy status updated');
+   *   },
+   *   function(error) {
+   *     console.error('Error:', error);
+   *   }
+   * );
+   */
+  ACPCore.setPrivacyStatusBasedOnATT = function (success, fail) {
+    var FUNCTION_NAME = 'setPrivacyStatusBasedOnATT';
+
+    if (success && !acpIsFunction(success)) {
+      acpPrintNotAFunction('success', FUNCTION_NAME);
+      return;
+    }
+
+    if (fail && !acpIsFunction(fail)) {
+      acpPrintNotAFunction('fail', FUNCTION_NAME);
+      return;
+    }
+
+    return exec(success, fail, PLUGIN_NAME, FUNCTION_NAME, []);
+  };
+
+  // ===========================================================================
+  // Existing Core SDK Methods (unchanged)
   // ===========================================================================
   
   ACPCore.dispatchEvent = function (sdkEvent, success, fail) {
@@ -381,25 +472,6 @@ var ACPCore = (function () {
    * 
    * @param {Function} success - Callback with status: "authorized", "denied", "restricted", "notDetermined", or "authorized_legacy" (iOS 13-)
    * @param {Function} fail - Error callback
-   * 
-   * @example
-   * // DON'T call on app launch!
-   * // DO call after user sees value:
-   * function afterUserOnboarding() {
-   *   ACPCore.requestTrackingAuthorization(
-   *     function(status) {
-   *       console.log('ATT Status:', status);
-   *       if (status === 'authorized') {
-   *         // User granted permission - tracking enabled
-   *       } else {
-   *         // User denied or restricted - respect their choice
-   *       }
-   *     },
-   *     function(error) {
-   *       console.error('ATT Error:', error);
-   *     }
-   *   );
-   * }
    */
   ACPCore.requestTrackingAuthorization = function (success, fail) {
     var FUNCTION_NAME = 'requestTrackingAuthorization';
@@ -421,26 +493,8 @@ var ACPCore = (function () {
    * Gets the current App Tracking Transparency authorization status (iOS 14+)
    * Does NOT prompt the user - only checks current status
    * 
-   * @param {Function} success - Callback with status: "authorized", "denied", "restricted", "notDetermined", "authorized_legacy", or "denied_legacy"
+   * @param {Function} success - Callback with status string
    * @param {Function} fail - Error callback
-   * 
-   * @example
-   * ACPCore.getTrackingAuthorizationStatus(
-   *   function(status) {
-   *     console.log('Current ATT Status:', status);
-   *     
-   *     if (status === 'notDetermined') {
-   *       // User hasn't been asked yet - good time to show pre-permission screen
-   *     } else if (status === 'authorized') {
-   *       // Tracking is allowed
-   *     } else {
-   *       // Tracking denied or restricted
-   *     }
-   *   },
-   *   function(error) {
-   *     console.error('Error:', error);
-   *   }
-   * );
    */
   ACPCore.getTrackingAuthorizationStatus = function (success, fail) {
     var FUNCTION_NAME = 'getTrackingAuthorizationStatus';

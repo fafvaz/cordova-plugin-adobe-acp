@@ -433,4 +433,47 @@ import AdSupport
     // Initialize Adobe SDK extensions
     ACPAppDelegatePush.registerExtensions()
   }
+
+  // ===========================================================================
+  // Consent Management Methods
+  // ===========================================================================
+
+  /**
+  * Handles user consent for Adobe SDK initialization
+  * This bridges JavaScript consent decisions to the native Swift consent handler
+  */
+  @objc(handleUserConsent:)
+  func handleUserConsent(command: CDVInvokedUrlCommand!) {
+    self.commandDelegate.run(inBackground: {
+      guard let granted = command.arguments[0] as? Bool else {
+        let pluginResult = CDVPluginResult(
+          status: CDVCommandStatus_ERROR, 
+          messageAs: "Invalid consent value - must be boolean"
+        )
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+        return
+      }
+      
+      // Call the consent handler in ACPAppDelegatePush
+      ACPAppDelegatePush.handleUserConsent(granted: granted)
+      
+      let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
+      self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+    })
+  }
+
+  /**
+  * Updates privacy status based on current ATT authorization
+  * Useful if user changes tracking permission in iOS Settings
+  */
+  @objc(setPrivacyStatusBasedOnATT:)
+  func setPrivacyStatusBasedOnATT(command: CDVInvokedUrlCommand!) {
+    self.commandDelegate.run(inBackground: {
+      // Update privacy status based on current ATT state
+      ACPAppDelegatePush.setPrivacyStatusBasedOnATT()
+      
+      let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
+      self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+    })
+  }
 }
