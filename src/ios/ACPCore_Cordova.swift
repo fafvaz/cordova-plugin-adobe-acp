@@ -144,20 +144,33 @@ import AdSupport
 
   @objc(setAdvertisingIdentifier:)
   func setAdvertisingIdentifier(command: CDVInvokedUrlCommand!) {
-    self.commandDelegate.run(inBackground: {
-      guard let newIdentifier = command.arguments[0] as? String else {
-        let pluginResult = CDVPluginResult(
-          status: CDVCommandStatus_ERROR, 
-          messageAs: "Invalid advertising identifier")
-        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
-        return
-      }
-      
-      MobileCore.setAdvertisingIdentifier(newIdentifier)
-      
-      let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
-      self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
-    })
+      self.commandDelegate.run(inBackground: {
+          guard let newIdentifier = command.arguments[0] as? String else {
+              let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR,
+                                                messageAs: "Invalid identifier")
+              self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+              return
+          }
+
+          // FIX: Check ATT status before accepting IDFA
+          if #available(iOS 14, *) {
+              let attStatus = ATTrackingManager.trackingAuthorizationStatus
+
+              if attStatus != .authorized {
+                  // User hasn't authorized tracking - reject the IDFA
+                  let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR,
+                                                    messageAs: "Tracking not authorized")
+                  self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+                  return
+              }
+          }
+
+          // Only set IDFA if ATT is authorized
+          MobileCore.setAdvertisingIdentifier(newIdentifier)
+
+          let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
+          self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+      })
   }
 
   @objc(setLogLevel:)
@@ -298,71 +311,51 @@ import AdSupport
   /// Best practice: Call after user has experienced app value, not immediately on launch
   @objc(requestTrackingAuthorization:)
   func requestTrackingAuthorization(command: CDVInvokedUrlCommand!) {
-    // CRITICAL: Must run on main thread for UI presentation
-    DispatchQueue.main.async {
-      if #available(iOS 14, *) {
-        ATTrackingManager.requestTrackingAuthorization { status in
-          let statusString: String
-          
-          switch status {
-          case .authorized:
-            statusString = "authorized"
-            // User authorized - collect IDFA and update Adobe privacy
-            let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
-            
-            if idfa != "00000000-0000-0000-0000-000000000000" {
-              MobileCore.setAdvertisingIdentifier(idfa)
-              MobileCore.setPrivacyStatus(.optedIn)
-              NSLog("ATT: Authorized with IDFA: %@", idfa)
-            } else {
-              // Zero UUID despite authorization (LAT enabled)
+      DispatchQueue.main.async {
+          if #available(iOS 14, *) {
+              // FIX: Ensure privacy is opted out BEFORE showing dialog
               MobileCore.setPrivacyStatus(.optedOut)
-              NSLog("ATT: Authorized but LAT enabled")
-            }
-            
-          case .denied:
-            statusString = "denied"
-            MobileCore.setPrivacyStatus(.optedOut)
-            NSLog("ATT: Denied by user")
-            
-          case .restricted:
-            statusString = "restricted"
-            MobileCore.setPrivacyStatus(.optedOut)
-            NSLog("ATT: Restricted by device")
-            
-          case .notDetermined:
-            statusString = "notDetermined"
-            // This shouldn't happen after request, but handle it
-            MobileCore.setPrivacyStatus(.unknown)
-            NSLog("ATT: Not determined after request")
-            
-          @unknown default:
-            statusString = "unknown"
-            MobileCore.setPrivacyStatus(.unknown)
-            NSLog("ATT: Unknown status")
+
+              ATTrackingManager.requestTrackingAuthorization { status in
+                  let statusString: String
+
+                  switch status {
+                  case .authorized:
+                      statusString = "authorized"
+                      let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
+                      if idfa != "00000000-0000-0000-0000-000000000000" {
+                          // User authorized - NOW set privacy to opted in
+                          MobileCore.setPrivacyStatus(.optedIn)
+                          MobileCore.setAdvertisingIdentifier(idfa)
+                      }
+
+                  case .denied, .restricted:
+                      statusString = (status == .denied) ? "denied" : "restricted"
+                      // Privacy already set to optedOut above
+                      MobileCore.setPrivacyStatus(.optedOut)
+
+                      // NEW: Clear any queued Adobe events
+                      MobileCore.setAdvertisingIdentifier(nil)
+
+                  case .notDetermined:
+                      statusString = "notDetermined"
+                      // Keep opted out until determined
+
+                  @unknown default:
+                      statusString = "unknown"
+                  }
+
+                  let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK,
+                                                     messageAs: statusString)
+                  self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+              }
+          } else {
+              // iOS 13 and below
+              let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR,
+                                                messageAs: "ATT not available on iOS < 14")
+              self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
           }
-          
-          let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: statusString)
-          self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
-        }
-      } else {
-        // iOS 13 or earlier - ATT not available
-        // Check LAT setting and set accordingly
-        let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
-        
-        if idfa != "00000000-0000-0000-0000-000000000000" {
-          MobileCore.setAdvertisingIdentifier(idfa)
-          MobileCore.setPrivacyStatus(.optedIn)
-        } else {
-          MobileCore.setPrivacyStatus(.optedOut)
-        }
-        
-        let pluginResult = CDVPluginResult(
-          status: CDVCommandStatus_OK, 
-          messageAs: "authorized_legacy")
-        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
       }
-    }
   }
 
   /// Gets current ATT authorization status without prompting user
