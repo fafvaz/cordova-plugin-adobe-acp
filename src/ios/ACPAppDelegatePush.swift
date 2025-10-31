@@ -115,12 +115,12 @@ import AdSupport
                 NSLog("Adobe SDK: Privacy set to OptedOut (ATT Denied/Restricted)")
                 
             case .notDetermined:
-                MobileCore.setPrivacyStatus(.unknown)
-                NSLog("Adobe SDK: Privacy set to Unknown (ATT Not Determined)")
+                MobileCore.setPrivacyStatus(.optedOut)  // FIX: Don't queue anything until user decides
+                NSLog("Adobe SDK: Privacy set to OptedOut (ATT Not Determined - waiting for user decision)")
                 
             @unknown default:
-                MobileCore.setPrivacyStatus(.unknown)
-                NSLog("Adobe SDK: Privacy set to Unknown (Unknown ATT Status)")
+                MobileCore.setPrivacyStatus(.optedOut)  // FIX: Don't queue anything until user decides
+                NSLog("Adobe SDK: Privacy set to OptedOut (Unknown ATT Status)")
             }
         } else {
             // iOS 13 or earlier
