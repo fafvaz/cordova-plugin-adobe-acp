@@ -73,7 +73,7 @@ public class ACPCampaign_Cordova extends CordovaPlugin {
     private void setPushIdentifier(final JSONArray args, final CallbackContext callbackContext) {
 
 
-        typeId = cordova.getActivity().getString(cordova.getActivity().getResources().getIdentifier("TypeId", "string", cordova.getActivity().getPackageName()));
+        typeId = preferences.getString("TYPE_ID", "");
 
         cordova.getThreadPool().execute(new Runnable() {           
             @Override
