@@ -6,6 +6,9 @@
     <license>Apache 2.0</license>
     <keywords>cordova,adobe,core,acpcore,target,acptarget,analytics,acpanalytics,marketing</keywords>
 
+    <preference name="APP_ID" />
+    <preference name="TYPE_ID" />
+
     <!-- JavaScript modules for Adobe Experience Platform APIs -->
     <js-module name="cordova-acpcore" src="www/ACPCore.js">
         <clobbers target="ACPCore" />
