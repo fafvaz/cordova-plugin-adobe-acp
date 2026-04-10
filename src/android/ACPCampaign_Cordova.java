@@ -11,43 +11,33 @@
 
 package com.adobe.marketing.mobile.cordova;
 
-import android.os.Handler;
-import android.os.Looper;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.util.Log;
 
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
+
 import com.adobe.marketing.mobile.AdobeCallback;
 import com.adobe.marketing.mobile.Campaign;
-import com.adobe.marketing.mobile.Identity;
-import com.adobe.marketing.mobile.Lifecycle;
 import com.adobe.marketing.mobile.MobileCore;
-import com.adobe.marketing.mobile.Signal;
-import com.adobe.marketing.mobile.UserProfile;
 
 import java.util.HashMap;
 
-
-
-
-/**
- * This class echoes a string called from JavaScript.
- */
 public class ACPCampaign_Cordova extends CordovaPlugin {
 
-     private String typeId;
+    private String typeId;
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
 
         if ("extensionVersion".equals(action)) {
             extensionVersion(callbackContext);
-            return true;       
-        }
-        else if ("setPushIdentifier".equals(action)){
+            return true;
+        } else if ("setPushIdentifier".equals(action)) {
             setPushIdentifier(args, callbackContext);
             return true;
         }
@@ -69,19 +59,24 @@ public class ACPCampaign_Cordova extends CordovaPlugin {
         });
     }
 
-    //SetPushIdentifier
     private void setPushIdentifier(final JSONArray args, final CallbackContext callbackContext) {
 
+        // Read TypeId from AndroidManifest meta-data
+        try {
+            ApplicationInfo ai = cordova.getActivity()
+                .getPackageManager()
+                .getApplicationInfo(
+                    cordova.getActivity().getPackageName(),
+                    PackageManager.GET_META_DATA
+                );
+            typeId = ai.metaData.getString("com.adobe.TypeId");
+            Log.d("ACP_CAMPAIGN", "TypeId loaded: " + typeId);
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.e("ACP_CAMPAIGN", "Failed to read TypeId from AndroidManifest: " + e.getMessage());
+            typeId = "";
+        }
 
-        android.content.pm.ApplicationInfo ai = cordova.getActivity()
-            .getPackageManager()
-            .getApplicationInfo(
-                cordova.getActivity().getPackageName(),
-                android.content.pm.PackageManager.GET_META_DATA
-            );
-        typeId = ai.metaData.getString("com.adobe.TypeId");
-
-        cordova.getThreadPool().execute(new Runnable() {           
+        cordova.getThreadPool().execute(new Runnable() {
             @Override
             public void run() {
                 if (args == null || args.length() != 2) {
@@ -89,7 +84,6 @@ public class ACPCampaign_Cordova extends CordovaPlugin {
                     return;
                 }
                 try {
-
                     String deviceToken = args.getString(0);
                     String valueTypeId = args.getString(1);
                     HashMap<String, String> data = new HashMap<>();
@@ -97,16 +91,10 @@ public class ACPCampaign_Cordova extends CordovaPlugin {
                     MobileCore.setPushIdentifier(deviceToken);
                     MobileCore.collectPii(data);
                     callbackContext.success();
-                    
-                    return;
                 } catch (JSONException e) {
                     callbackContext.error("Error while parsing argument, Error " + e.getLocalizedMessage());
-                    return;
                 }
-                
-            }      
+            }
         });
-
     }
-
 }
