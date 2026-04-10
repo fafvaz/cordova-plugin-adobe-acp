@@ -421,7 +421,7 @@ import AdSupport
     dateFormatter.dateFormat = "dd/MM/yyyy HH:mm:ss"
     initTime = dateFormatter.string(from: date as Date)
     
-    self.appId = Bundle.main.object(forInfoDictionaryKey: "AppId") as? String
+    self.appId = self.commandDelegate.settings["app_id"] as? String
     
     // Initialize Adobe SDK extensions
     ACPAppDelegatePush.registerExtensions()
