@@ -6,9 +6,6 @@
     <license>Apache 2.0</license>
     <keywords>cordova,adobe,core,acpcore,target,acptarget,analytics,acpanalytics,marketing</keywords>
 
-    <preference name="APP_ID" />
-    <preference name="TYPE_ID" />
-
     <!-- JavaScript modules for Adobe Experience Platform APIs -->
     <js-module name="cordova-acpcore" src="www/ACPCore.js">
         <clobbers target="ACPCore" />
@@ -43,11 +40,13 @@
 
     <!-- Android platform configuration -->
     <platform name="android">
-        <config-file target="res/values/cdv_strings.xml" parent="/*">
-            <string name="AppId">$APP_ID</string>
-        </config-file>
-        <config-file target="res/values/cdv_strings.xml" parent="/*">
-            <string name="TypeId">$TYPE_ID</string>
+        <config-file target="AndroidManifest.xml" parent="/manifest/application">
+            <meta-data 
+                android:name="com.adobe.AppId" 
+                android:value="$APP_ID" />
+            <meta-data 
+                android:name="com.adobe.TypeId" 
+                android:value="$TYPE_ID" />
         </config-file>
         <config-file parent="/*" target="res/xml/config.xml">
             <feature name="ACPCore_Cordova">
