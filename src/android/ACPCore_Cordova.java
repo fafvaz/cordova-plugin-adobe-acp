@@ -467,7 +467,7 @@ public class ACPCore_Cordova extends CordovaPlugin {
         new ACPFirebaseMessagingService();
         intance = this;
 
-        appId = preferences.getString("APP_ID", "");
+        appId = cordova.getActivity().getString(cordova.getActivity().getResources().getIdentifier("AppId", "string", cordova.getActivity().getPackageName()));
         
         try {
 

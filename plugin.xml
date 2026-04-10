@@ -43,12 +43,13 @@
 
     <!-- Android platform configuration -->
     <platform name="android">
-        <!--<config-file target="res/values/strings.xml" parent="/*">
+        <resource-file src="res/values/strings.xml" target="app/src/main/res/values/strings.xml" />
+        <config-file target="res/values/strings.xml" parent="/*">
             <string name="AppId">$APP_ID</string>
         </config-file>
         <config-file target="res/values/strings.xml" parent="/*">
             <string name="TypeId">$TYPE_ID</string>
-        </config-file>-->
+        </config-file>
         <config-file parent="/*" target="res/xml/config.xml">
             <feature name="ACPCore_Cordova">
                 <param name="android-package" value="com.adobe.marketing.mobile.cordova.ACPCore_Cordova" />
@@ -154,7 +155,7 @@
     <platform name="ios">
         <dependency id="cordova-plugin-add-swift-support" version="2.0.2"/>
 
-        <!--<config-file parent="/*" target="config.xml">
+        <config-file parent="/*" target="config.xml">
             <preference name="SwiftVersion" value="5.0" />
         </config-file>
         <config-file target="*-Info.plist" parent="AppId">
@@ -162,7 +163,7 @@
         </config-file>
         <config-file target="*-Info.plist" parent="TypeId">
             <string>$TYPE_ID</string>
-        </config-file>-->
+        </config-file>
         <config-file target="*-Info.plist" parent="NSLocationAlwaysUsageDescription">
             <string>Location permission necessary for geofencing with Adobe Experience Platform</string>
         </config-file>

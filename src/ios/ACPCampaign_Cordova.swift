@@ -30,7 +30,7 @@ import UserNotifications
           return
       }
       
-      self.typeId = self.commandDelegate.settings["type_id"] as? String
+      self.typeId = Bundle.main.object(forInfoDictionaryKey: "TypeId") as? String ?? ""
       
       // Request notification permissions on main thread
       DispatchQueue.main.async {
