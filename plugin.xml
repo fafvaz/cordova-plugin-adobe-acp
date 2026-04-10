@@ -43,8 +43,12 @@
 
     <!-- Android platform configuration -->
     <platform name="android">
-        <source-file src="src/android/cdv_strings.xml" 
-             target-dir="app/src/main/res/values" />
+        <config-file target="res/values/cdv_strings.xml" parent="/*">
+            <string name="AppId">$APP_ID</string>
+        </config-file>
+        <config-file target="res/values/cdv_strings.xml" parent="/*">
+            <string name="TypeId">$TYPE_ID</string>
+        </config-file>
         <config-file parent="/*" target="res/xml/config.xml">
             <feature name="ACPCore_Cordova">
                 <param name="android-package" value="com.adobe.marketing.mobile.cordova.ACPCore_Cordova" />
